@@ -1,0 +1,10 @@
+version: 2
+sources:
+- name: dbt_workdb
+  project: project1-263413
+  dataset: dbt_workdb
+  tables:
+    - name: base_table
+    - name: recursive_result
+    - name: recursive_result_v1
+    - name: recursive_model
