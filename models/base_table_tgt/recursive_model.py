@@ -1,5 +1,12 @@
 import numpy as np
 import pandas as pd
+# You use Spark SQL in a "SparkSession" to create DataFrames
+from pyspark.sql import SparkSession, DataFrame
+# PySpark functions
+from pyspark.sql.functions import avg, col, count, desc, round, size, udf, length, concat_ws, trim
+# These allow us to create a schema for our data
+from pyspark.sql.types import ArrayType, IntegerType, StringType, StructType, StructField, IntegerType, StringType
+from functools import reduce
 
 # default values
 dv_scrubbed_serial_num_threshold = 2000
@@ -68,19 +75,19 @@ def model(dbt, session):
     global recursive_count
     
     # get the base table into a dataframe
-    base_table_df = dbt.source('dbt_workdb', 'base_table').toPandas()
-    
+    #base_table_df = dbt.source('dbt_workdb', 'base_table_v1').toPandas()
+    base_table_df = dbt.source('dbt_workdb', 'base_table_v1')
     # execution of non recusrive logic
     #non_recursive_df = pd.read_gbq(non_recusrive_sql,project_id=project_id_value,credentials=credentials)
-    non_recursive_df = base_table_df.loc[base_table_df['RNK'] == 1]
+    #non_recursive_df = base_table_df.loc[base_table_df['RNK'] == 1]
     
     # first append the non-recursive term result as it forms the base of the union all statement
-    recursive_result_list.append(non_recursive_df)
+    #recursive_result_list.append(non_recursive_df)
     
     # start the recursion by calling the recursive function
-    recursive_result_list = recusrion(non_recursive_df, base_table_df)
+    #recursive_result_list = recusrion(non_recursive_df, base_table_df)
 
 
-    concatenated_result = pd.concat(recursive_result_list)
+    #concatenated_result = pd.concat(recursive_result_list)
     
-    return concatenated_result
+    return base_table_df
