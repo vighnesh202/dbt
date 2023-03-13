@@ -1,5 +1,6 @@
 # You use Spark SQL in a "SparkSession" to create DataFrames
 from pyspark.sql import SparkSession, DataFrame
+from pyspark.storagelevel import StorageLevel
 # PySpark functions
 from pyspark.sql.functions import avg, col, count, desc, round, size, udf, length, concat_ws, trim, substring
 # These allow us to create a schema for our data
@@ -17,14 +18,15 @@ recursive_count  = 0
 
 
 def recusrion(recursion_df, base_table_df):
+    #base_table_df.cache()
     # Execute recursive logic with Ri as an input to return the result set Ri+1 as the output, until
     # an empty result set is returned
     global recursive_count
     global recursive_result_list
-    recursion_df = recursion_df.alias("recursion_df")
-    base_table_df = base_table_df.alias("base_table_df")
+    #recursion_df = recursion_df.alias("recursion_df")
+    #base_table_df = base_table_df.alias("base_table_df")
     recursive_count += 1
-
+    print(recursive_count)
     # xyz recursive logic
     # An empty dataframe to hold the recursive result set Ri
     schema = StructType([
@@ -35,15 +37,15 @@ def recusrion(recursion_df, base_table_df):
     ])
 
     recursive_result = spark.createDataFrame([], schema)
-    
+    #recursion_df.cache()
     # the first part is to do the from statement
     # Inner join between the recursive result and base table
-    p1 = recursion_df.join(base_table_df, on=["BK_POS_TRANSACTION_ID_INT"], how="inner")
+    p1 = recursion_df.alias("recursion_df").join(base_table_df.alias("base_table_df"), on=["BK_POS_TRANSACTION_ID_INT"], how="inner")
     
     # second part is to execute where clause
     p2 = p1.filter((col("base_table_df.RNK") == (col("recursion_df.RNK") + 1)) &
                ((length(col("recursion_df.DV_SCRUBBED_SERIAL_NUM")) + length(col("base_table_df.DV_SCRUBBED_SERIAL_NUM"))) < dv_scrubbed_serial_num_threshold))
-    
+    p2.cache()
     # select clause
     recursive_result = p2.select(
       col("BK_POS_TRANSACTION_ID_INT").alias("BK_POS_TRANSACTION_ID_INT"),
@@ -56,7 +58,7 @@ def recusrion(recursion_df, base_table_df):
     if recursive_result.count():
         recursive_result_list.append(recursive_result)
         return recusrion(recursive_result, base_table_df)
-        
+    #base_table_df.unpersist()
     return recursive_result_list
     
 
@@ -70,9 +72,9 @@ def model(dbt, session):
     
     # get the base table into a dataframe
     base_table_df = dbt.source('dbt_workdb', 'base_table_v1')
-    
+    #base_table_df.cache()
     # execution of non recusrive logic
-    non_recursive_df = base_table_df.filter(base_table_df['RNK'] == 31)
+    non_recursive_df = base_table_df.filter(base_table_df['RNK'] == 1)
     
     # first append the non-recursive term result as it forms the base of the union all statement
     recursive_result_list.append(non_recursive_df)
@@ -81,5 +83,5 @@ def model(dbt, session):
     recursive_result_list = recusrion(non_recursive_df, base_table_df)
     
     final_df = reduce(DataFrame.union, recursive_result_list)
-    
+    #base_table_df = base_table_df.unpersist()
     return final_df

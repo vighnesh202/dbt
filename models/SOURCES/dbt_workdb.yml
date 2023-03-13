@@ -9,3 +9,4 @@ sources:
     - name: recursive_result_v1
     - name: recursive_model
     - name: base_table_v1
+    - name: base_table_run2

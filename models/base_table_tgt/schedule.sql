@@ -1,0 +1,25 @@
+create MATERIALIZED view `gcp-edwprddata-prd-33200.ETLSTGDB.ST_SI_XXOPL_BILLING_SCHEDULE_Materialized_view` 
+OPTIONS (enable_refresh = true, refresh_interval_minutes = 5) AS
+select 
+JSON_VALUE(billingSchedule.billAmount) as BILL_AMOUNT, 
+JSON_VALUE(billingSchedule.billPeriodEndDate) as BILL_PERIOD_END_DATE,
+JSON_VALUE(billingSchedule.billPeriodStartDate) as BILL_PERIOD_START_DATE,
+JSON_VALUE(billingSchedule.billQuantity) as BILL_QUANTITY,
+JSON_VALUE(billingSchedule.billReleaseDate) as BILL_RELEASE_DATE,
+JSON_VALUE(billingSchedule.billScheduleID) as BILL_SCHEDULE_ID,
+JSON_VALUE(billingSchedule.billScheduleNumber) as BILL_SCHEDULE_NUMBER,
+JSON_VALUE(billingSchedule.billStatus) as BILL_STATUS,
+JSON_VALUE(billingSchedule.currencyCode) as CURRENCY_CODE,
+t1.EDWBQ_CREATEDTM as EDW_CREATE_DTM,
+JSON_VALUE(lines.headerId) as HEADER_ID,
+JSON_VALUE(billingSchedule.invoiceAmout) as INVOICE_AMOUNT,
+JSON_VALUE(billingSchedule.invoiceDate) as INVOICE_DATE,
+JSON_VALUE(billingSchedule.invoiceNumber) as INVOICE_NUMBER,
+JSON_VALUE(lines.lineId) as LINE_ID,
+JSON_VALUE(lines.lineRefNumber) as LINE_REF_NUMBER,
+JSON_VALUE(t1.data.OrderData.Header.orderOrigin) as ORDER_ORIGIN,
+t1.partition as PARTITION_NUMBER,
+t1.offset as RECORD_OFFSET,
+"oplOrderData" as TOPIC_NAME,
+from gcp-edwprddata-prd-33200.SSDB.OPL_KAFKA_PRD_OPLORDERDATA t1,
+unnest(JSON_EXTRACT_ARRAY(t1.data.OrderData.Lines)) lines, unnest(JSON_EXTRACT_ARRAY(lines.billingSchedule)) billingSchedule
